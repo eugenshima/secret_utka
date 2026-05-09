@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-docker compose down --remove-orphans
-docker compose up --build
+
+# Стоп без docker compose down: контейнеры и volume не удаляются, образы postgres и т.д. не пересобираются.
+docker compose stop
+docker compose build app
+docker compose up
