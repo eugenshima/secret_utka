@@ -84,7 +84,7 @@ CREATE TABLE core."user"
     CONSTRAINT fk_user_user_status FOREIGN KEY (status_id) REFERENCES status.user_status (id)
 );
 
-CREATE TABLE core.account
+CREATE TABLE core.accountEntity
 (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id     BIGINT NOT NULL,
@@ -96,13 +96,13 @@ CREATE TABLE core.account
     CONSTRAINT fk_account_account_status FOREIGN KEY (status_id) REFERENCES status.account_status (id)
 );
 
-CREATE TABLE core.wallet
+CREATE TABLE core.walletEntity
 (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     account_id  BIGINT NOT NULL,
     amount      NUMERIC(20, 4),
     status_id   BIGINT NOT NULL,
-    CONSTRAINT fk_wallet_account FOREIGN KEY (account_id) REFERENCES core.account (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_wallet_account FOREIGN KEY (account_id) REFERENCES core.accountEntity (id) ON DELETE RESTRICT,
     CONSTRAINT fk_wallet_wallet_status FOREIGN KEY (status_id) REFERENCES status.wallet_status (id)
 );
 
@@ -115,6 +115,6 @@ CREATE TABLE core."transaction"
     description     VARCHAR(255),
     processed_at    TIMESTAMP      NOT NULL DEFAULT now(),
     status_id       BIGINT         NOT NULL,
-    CONSTRAINT fk_transaction_wallet FOREIGN KEY (wallet_id) REFERENCES core.wallet (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_transaction_wallet FOREIGN KEY (wallet_id) REFERENCES core.walletEntity (id) ON DELETE RESTRICT,
     CONSTRAINT fk_transaction_transaction_status FOREIGN KEY (status_id) REFERENCES status.transaction_status (id)
 );
