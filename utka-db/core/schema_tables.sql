@@ -79,6 +79,7 @@ CREATE TABLE core."user"
     password     VARCHAR   NOT NULL,
     email        VARCHAR UNIQUE,
     display_name VARCHAR,
+    role         VARCHAR(16) NOT NULL DEFAULT 'USER',
     status_id    BIGINT    NOT NULL,
     created_at   TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT fk_user_user_status FOREIGN KEY (status_id) REFERENCES status.user_status (id)

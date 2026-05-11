@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { fetchUserById, type UserResponse } from "../api/users";
+import { fetchUserById, fetchUserStatuses, updateUserStatus, type UserResponse, type UserStatus } from "../api/users";
 import "./user-detail-modal.css";
 
 type Props = {
   userId: number | null;
   onClose: () => void;
+  onUserUpdated?: () => void;
 };
 
 function formatWhen(iso: string | undefined): string {
@@ -23,18 +24,25 @@ function formatWhen(iso: string | undefined): string {
   }
 }
 
-export function UserDetailModal({ userId, onClose }: Props) {
+export function UserDetailModal({ userId, onClose, onUserUpdated }: Props) {
   const titleId = useId();
+  const statusSelectId = useId();
   const [data, setData] = useState<UserResponse | null>(null);
+  const [statuses, setStatuses] = useState<UserStatus[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [savingStatus, setSavingStatus] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [selectedStatusId, setSelectedStatusId] = useState<string>("");
 
-  const load = useCallback(async (id: number) => {
+  const loadUser = useCallback(async (id: number) => {
     setLoading(true);
     setErr(null);
     setData(null);
     try {
-      setData(await fetchUserById(id));
+      const u = await fetchUserById(id);
+      setData(u);
+      setSelectedStatusId(String(u.status.id));
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -42,12 +50,24 @@ export function UserDetailModal({ userId, onClose }: Props) {
     }
   }, []);
 
+  const loadStatuses = useCallback(async () => {
+    setStatusLoading(true);
+    try {
+      setStatuses(await fetchUserStatuses());
+    } catch {
+      /* справочник необязателен для просмотра */
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (userId === null) {
       return;
     }
-    void load(userId);
-  }, [userId, load]);
+    void loadUser(userId);
+    void loadStatuses();
+  }, [userId, loadUser, loadStatuses]);
 
   useEffect(() => {
     if (userId === null) {
@@ -61,6 +81,35 @@ export function UserDetailModal({ userId, onClose }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [userId, onClose]);
+
+  const statusOptions = useMemo(() => {
+    if (!data || statuses.some((s) => s.id === data.status.id)) {
+      return statuses;
+    }
+    return [data.status, ...statuses];
+  }, [statuses, data]);
+
+  async function onSaveStatus() {
+    if (userId === null || data === null) {
+      return;
+    }
+    const sid = Number(selectedStatusId);
+    if (!Number.isFinite(sid)) {
+      setErr("Выберите статус из списка");
+      return;
+    }
+    setSavingStatus(true);
+    setErr(null);
+    try {
+      await updateUserStatus(userId, sid);
+      await loadUser(userId);
+      onUserUpdated?.();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSavingStatus(false);
+    }
+  }
 
   if (userId === null) {
     return null;
@@ -97,6 +146,12 @@ export function UserDetailModal({ userId, onClose }: Props) {
                   <dd>{data.id}</dd>
                 </div>
                 <div>
+                  <dt>Роль</dt>
+                  <dd>
+                    <span className="udm-badge">{data.role}</span>
+                  </dd>
+                </div>
+                <div>
                   <dt>Email</dt>
                   <dd>{data.email || "—"}</dd>
                 </div>
@@ -122,6 +177,44 @@ export function UserDetailModal({ userId, onClose }: Props) {
                   <dd>{data.status?.id ?? "—"}</dd>
                 </div>
               </dl>
+
+              <div className="udm-status-edit">
+                <label htmlFor={statusSelectId} className="udm-status-edit__label">
+                  Сменить статус
+                </label>
+                <div className="udm-status-edit__row">
+                  <select
+                    id={statusSelectId}
+                    className="udm-select"
+                    value={selectedStatusId}
+                    disabled={statusLoading || statusOptions.length === 0}
+                    onChange={(e) => setSelectedStatusId(e.target.value)}
+                  >
+                    {statusOptions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.code} — {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="udm-btn-primary"
+                    disabled={
+                      savingStatus ||
+                      statusLoading ||
+                      !statusOptions.length ||
+                      selectedStatusId === String(data.status?.id)
+                    }
+                    onClick={() => void onSaveStatus()}
+                  >
+                    {savingStatus ? "…" : "Сохранить"}
+                  </button>
+                </div>
+                {statusLoading ? <p className="udm-muted udm-status-edit__hint">Загрузка справочника…</p> : null}
+                {!statusLoading && statuses.length === 0 && statusOptions.length === 0 ? (
+                  <p className="udm-muted udm-status-edit__hint">Справочник статусов недоступен</p>
+                ) : null}
+              </div>
             </>
           ) : null}
         </div>

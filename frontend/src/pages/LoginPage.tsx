@@ -1,20 +1,31 @@
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { loginRequest, saveLoginSession } from "../api/auth";
 import "./login-page.css";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fromPath =
+    typeof (location.state as { from?: { pathname?: string } } | undefined)?.from?.pathname === "string"
+      ? (location.state as { from: { pathname: string } }).from.pathname
+      : "/";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
     try {
-      // TODO: замени на запрос к API (JWT, cookie, Spring Security …)
-      await new Promise((r) => setTimeout(r, 400));
-      navigate("/", { replace: true });
+      const dto = await loginRequest({ username, password });
+      saveLoginSession(dto);
+      navigate(fromPath.startsWith("/login") ? "/" : fromPath, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSubmitting(false);
     }
@@ -35,7 +46,9 @@ export function LoginPage() {
           </div>
         </div>
 
-        <form className="login-page__form" onSubmit={onSubmit}>
+        {error !== null ? <div className="login-page__err">{error}</div> : null}
+
+        <form className="login-page__form" onSubmit={(e) => void onSubmit(e)}>
           <div className="login-page__field">
             <label htmlFor="login-username">Логин</label>
             <input
@@ -69,7 +82,7 @@ export function LoginPage() {
 
         <footer className="login-page__footer">
           <Link to="/" className="login-page__link">
-            Вернуться на главную без входа
+            Вернуться на главную
           </Link>
         </footer>
       </div>

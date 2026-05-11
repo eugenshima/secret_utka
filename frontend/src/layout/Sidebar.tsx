@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { clearAuth, isAdmin } from "../api/auth";
 
 const STORAGE_KEY = "utka.sidebar.collapsed";
 
@@ -7,19 +8,20 @@ type NavItem = {
   to: string;
   label: string;
   abbrev: string;
+  adminOnly?: boolean;
 };
 
 const NAV: NavItem[] = [
   { to: "/", label: "Главная", abbrev: "⌂" },
   { to: "/profile", label: "Профиль", abbrev: "П" },
-  { to: "/users", label: "Пользователи", abbrev: "Ю" },
+  { to: "/users", label: "Пользователи", abbrev: "Ю", adminOnly: true },
   { to: "/account", label: "Счёт", abbrev: "С" },
   { to: "/wallet", label: "Кошелёк", abbrev: "К" },
   { to: "/transactions", label: "Транзакции", abbrev: "Т" },
-  { to: "/login", label: "Вход", abbrev: "→" },
 ];
 
 export function Sidebar() {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEY) === "1";
@@ -35,6 +37,13 @@ export function Sidebar() {
       /* ignore */
     }
   }, [collapsed]);
+
+  const visibleNav = NAV.filter((item) => !item.adminOnly || isAdmin());
+
+  function logout() {
+    clearAuth();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <aside className={`app-sidebar${collapsed ? " app-sidebar--narrow" : ""}`}>
@@ -52,7 +61,7 @@ export function Sidebar() {
       </div>
 
       <nav className="app-sidebar__nav">
-        {NAV.map((item) => (
+        {visibleNav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -64,6 +73,10 @@ export function Sidebar() {
             {!collapsed ? <span className="app-sidebar__link-text">{item.label}</span> : null}
           </NavLink>
         ))}
+        <button type="button" className="app-sidebar__link app-sidebar__link--logout" onClick={() => logout()}>
+          <span className="app-sidebar__link-abbrev">{collapsed ? "⨯" : "◂"}</span>
+          {!collapsed ? <span className="app-sidebar__link-text">Выйти</span> : null}
+        </button>
       </nav>
 
       <button type="button" className="app-sidebar__toggle" onClick={() => setCollapsed((c) => !c)}>

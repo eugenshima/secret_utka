@@ -1,6 +1,7 @@
 package secretutka.pet.core.dto;
 
 import lombok.Builder;
+import secretutka.pet.core.enums.UserRole;
 import secretutka.pet.core.dto.status.UserStatus;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ public record UserResponse(
 		String email,
 		String displayName,
 		UserStatus status,
+		UserRole role,
 		LocalDateTime createdAt) {
 
 }

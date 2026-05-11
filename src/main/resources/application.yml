@@ -16,3 +16,14 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789}
+    expiry-ms: 86400000
+  bootstrap:
+    enabled: true
+    admin-username: admin
+    admin-password: admin
+    user-username: user
+    user-password: user

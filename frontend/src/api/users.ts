@@ -1,3 +1,5 @@
+import { fetchJson } from "./auth";
+
 export type UserStatus = {
   id: number;
   code: string;
@@ -5,12 +7,15 @@ export type UserStatus = {
   description: string | null;
 };
 
+export type UserRole = "ADMIN" | "USER";
+
 export type UserResponse = {
   id: number;
   username: string;
   email: string | null;
   displayName: string | null;
   status: UserStatus;
+  role: UserRole;
   createdAt: string;
 };
 
@@ -28,30 +33,8 @@ export type UserCreateBody = {
   email?: string | null;
   display_name?: string | null;
   status_id: number;
+  role?: UserRole;
 };
-
-async function parseError(res: Response): Promise<string> {
-  const text = await res.text().catch(() => "");
-  return text || res.statusText || `HTTP ${res.status}`;
-}
-
-export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { Accept: "application/json", ...(init?.headers ?? {}) },
-    ...init,
-  });
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-  if (res.status === 204 || res.status === 205) {
-    return undefined as T;
-  }
-  const text = await res.text();
-  if (!text.trim()) {
-    return undefined as T;
-  }
-  return JSON.parse(text) as T;
-}
 
 export async function fetchUsers(): Promise<SpringPage<UserResponse>> {
   return fetchJson<SpringPage<UserResponse>>("/api/users");
@@ -59,6 +42,16 @@ export async function fetchUsers(): Promise<SpringPage<UserResponse>> {
 
 export async function fetchUserById(id: number): Promise<UserResponse> {
   return fetchJson<UserResponse>(`/api/users/${id}`);
+}
+
+export async function fetchUserStatuses(): Promise<UserStatus[]> {
+  return fetchJson<UserStatus[]>("/api/users/statuses");
+}
+
+export async function updateUserStatus(userId: number, statusId: number): Promise<void> {
+  await fetchJson<undefined>(`/api/users/${userId}/status/${statusId}`, {
+    method: "PATCH",
+  });
 }
 
 export async function createUser(body: UserCreateBody): Promise<void> {

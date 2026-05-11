@@ -7,7 +7,12 @@ import { AccountPage } from "./pages/AccountPage";
 import { WalletPage } from "./pages/WalletPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { isAdmin } from "./api/auth";
 import "./App.css";
+
+function AdminUsersOnly() {
+  return isAdmin() ? <UsersPage /> : <Navigate to="/profile" replace />;
+}
 
 export default function App() {
   return (
@@ -17,7 +22,7 @@ export default function App() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="profile" element={<ProfilePage />} />
-          <Route path="users" element={<UsersPage />} />
+          <Route path="users" element={<AdminUsersOnly />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="wallet" element={<WalletPage />} />
           <Route path="transactions" element={<TransactionsPage />} />

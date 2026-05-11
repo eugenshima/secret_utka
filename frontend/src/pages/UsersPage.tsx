@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
   createUser,
   deleteUser,
+  fetchUserStatuses,
   fetchUsers,
   type SpringPage,
   type UserCreateBody,
   type UserResponse,
+  type UserRole,
+  type UserStatus,
 } from "../api/users";
 import { UserDetailModal } from "../components/UserDetailModal";
 import "./users-page.css";
@@ -21,8 +24,11 @@ export function UsersPage() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [statusId, setStatusId] = useState("1");
+  const [statusId, setStatusId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [statusesCatalog, setStatusesCatalog] = useState<UserStatus[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [newRole, setNewRole] = useState<UserRole>("USER");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,8 +46,34 @@ export function UsersPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    void (async () => {
+      try {
+        setStatusesCatalog(await fetchUserStatuses());
+      } catch {
+        setStatusesCatalog([]);
+      } finally {
+        setCatalogLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!statusesCatalog.length) {
+      return;
+    }
+    const n = Number(statusId);
+    if (!Number.isFinite(n) || !statusesCatalog.some((s) => s.id === n)) {
+      setStatusId(String(statusesCatalog[0].id));
+    }
+  }, [statusesCatalog, statusId]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!statusesCatalog.length) {
+      setError("Сначала должен быть доступен справочник статусов");
+      return;
+    }
     const sid = Number(statusId);
     if (!Number.isFinite(sid)) {
       setError("status_id должен быть числом");
@@ -51,6 +83,7 @@ export function UsersPage() {
       username,
       password,
       status_id: sid,
+      role: newRole,
     };
     if (email.trim()) {
       body.email = email.trim();
@@ -95,7 +128,7 @@ export function UsersPage() {
         <p>Список учётных записей. Карточка открывает полный профиль в окне поверх страницы.</p>
       </header>
 
-      <UserDetailModal userId={selectedId} onClose={() => setSelectedId(null)} />
+      <UserDetailModal userId={selectedId} onClose={() => setSelectedId(null)} onUserUpdated={() => void load()} />
 
       <div className="users-toolbar">
         <div className="users-toolbar__left">
@@ -136,11 +169,38 @@ export function UsersPage() {
               <input id="display_name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </div>
             <div>
-              <label htmlFor="status_id">status_id</label>
-              <input id="status_id" value={statusId} onChange={(e) => setStatusId(e.target.value)} required />
+              <label htmlFor="status_id">Статус</label>
+              <select
+                id="status_id"
+                className="users-form-select"
+                value={statusId}
+                onChange={(e) => setStatusId(e.target.value)}
+                required
+                disabled={catalogLoading || statusesCatalog.length === 0}
+              >
+                {!catalogLoading &&
+                  statusesCatalog.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.code} — {s.name}
+                    </option>
+                  ))}
+              </select>
+              {catalogLoading ? <span className="muted users-form-catalog-hint">Загрузка справочника…</span> : null}
+              {!catalogLoading && statusesCatalog.length === 0 ? (
+                <span className="err users-form-catalog-hint" style={{ display: "block", marginTop: "0.35rem" }}>
+                  Не удалось загрузить /api/users/statuses
+                </span>
+              ) : null}
+            </div>
+            <div>
+              <label htmlFor="new-role">Роль</label>
+              <select id="new-role" className="users-form-select" value={newRole} onChange={(e) => setNewRole(e.target.value as UserRole)}>
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
             </div>
             <div className="users-form-grid__actions">
-              <button type="submit" disabled={saving}>
+              <button type="submit" disabled={saving || !statusesCatalog.length}>
                 {saving ? "Сохранение…" : "Создать"}
               </button>
             </div>
@@ -168,6 +228,7 @@ export function UsersPage() {
                   <div className="users-card__head">
                     <span className="users-card__name">{u.username}</span>
                     <span className="users-card__badge">{u.status?.code ?? "—"}</span>
+                    <span className="users-card__badge users-card__badge--muted">{u.role}</span>
                   </div>
                   <button
                     type="button"

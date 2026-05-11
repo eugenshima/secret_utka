@@ -2,6 +2,7 @@ package secretutka.pet.core.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import secretutka.pet.core.enums.UserRole;
 
 @Schema(description = "Данные для регистрации пользователя")
 public record UserCreateRequest(
@@ -19,5 +20,8 @@ public record UserCreateRequest(
 		String displayName,
 		@Schema(description = "Идентификатор статуса из status.user_status", example = "1")
 		@JsonProperty("status_id")
-		Long statusId) {
+		Long statusId,
+		@Schema(description = "Роль (только для администратора; по умолчанию USER)", example = "USER")
+		@JsonProperty("role")
+		UserRole role) {
 }

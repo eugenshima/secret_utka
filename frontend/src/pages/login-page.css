@@ -89,6 +89,17 @@
   color: #64748b;
 }
 
+.login-page__err {
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
 .login-page__form {
   display: flex;
   flex-direction: column;
