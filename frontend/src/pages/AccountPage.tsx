@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchAccounts, type AccountRow, type SpringPage } from "../api/accounts";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 function fmtAmount(v: AccountRow["amount"]): string {
   if (v === null || v === undefined) {
@@ -12,6 +13,7 @@ export function AccountPage() {
   const [page, setPage] = useState<SpringPage<AccountRow> | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmRefresh, setConfirmRefresh] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -31,12 +33,24 @@ export function AccountPage() {
 
   return (
     <div className="app-page">
+      <ConfirmDialog
+        open={confirmRefresh}
+        title="Обновить данные?"
+        message="Повторно запросить счета с сервера."
+        confirmLabel="Обновить"
+        cancelLabel="Отмена"
+        onCancel={() => setConfirmRefresh(false)}
+        onConfirm={() => {
+          setConfirmRefresh(false);
+          void load();
+        }}
+      />
       <header className="app-page__header">
         <h1>Счёт</h1>
         <p>Список счетов текущего пользователя; администратор видит все.</p>
       </header>
       <div className="users-toolbar">
-        <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => void load()}>
+        <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => setConfirmRefresh(true)}>
           Обновить
         </button>
         {page !== null ? (

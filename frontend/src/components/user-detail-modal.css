@@ -11,6 +11,10 @@
   animation: udm-fade 0.18s ease;
 }
 
+.udm-backdrop--nested {
+  z-index: 1100;
+}
+
 @keyframes udm-fade {
   from {
     opacity: 0;
@@ -86,6 +90,20 @@
   justify-content: flex-end;
 }
 
+.udm-footer--actions {
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.udm-footer--confirm {
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.udm-btn-primary--danger {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
 .udm-btn-secondary {
   font: inherit;
   padding: 0.45rem 1rem;
@@ -98,6 +116,37 @@
 
 .udm-btn-secondary:hover {
   background: #f8fafc;
+}
+
+.udm-btn-exit {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.5rem 1.15rem;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #475569;
+  border: 1px solid rgb(226 232 240);
+  background: linear-gradient(180deg, #fff 0%, #f1f5f9 55%, #eef2f7 100%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 1px 2px rgb(15 23 42 / 0.07);
+  transition:
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.udm-btn-exit:hover {
+  color: #0f172a;
+  border-color: rgb(148 163 184 / 0.9);
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 50%, #e8edf4 100%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.95) inset, 0 2px 8px rgb(15 23 42 / 0.1);
+}
+
+.udm-btn-exit:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 1px 2px rgb(15 23 42 / 0.08);
 }
 
 .udm-muted {
@@ -174,6 +223,33 @@
   grid-column: 1 / -1;
 }
 
+.udm-status-dd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+}
+
+.udm-status-dd .udm-select {
+  width: 100%;
+  flex: unset;
+}
+
+.udm-status-field-label {
+  cursor: pointer;
+}
+
+.udm-status-hint {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.udm-status-meta-desc {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  line-height: 1.45;
+}
 .udm-badge {
   display: inline-block;
   padding: 0.15rem 0.45rem;
@@ -183,39 +259,6 @@
   font-weight: 700;
   font-size: 0.8rem;
   margin-right: 0.45rem;
-}
-
-.udm-status-name {
-  color: #475569;
-  font-size: 0.9rem;
-}
-
-.udm-desc {
-  color: #475569;
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
-.udm-status-edit {
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.udm-status-edit__label {
-  display: block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #94a3b8;
-  font-weight: 600;
-  margin-bottom: 0.45rem;
-}
-
-.udm-status-edit__row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: stretch;
 }
 
 .udm-select {
@@ -259,8 +302,4 @@
   cursor: not-allowed;
 }
 
-.udm-status-edit__hint {
-  margin: 0.45rem 0 0;
-  font-size: 0.78rem;
-}
 

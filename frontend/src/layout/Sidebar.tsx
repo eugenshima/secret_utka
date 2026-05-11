@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { clearAuth, isAdmin } from "../api/auth";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 const STORAGE_KEY = "utka.sidebar.collapsed";
 
@@ -22,6 +23,7 @@ const NAV: NavItem[] = [
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEY) === "1";
@@ -46,6 +48,7 @@ export function Sidebar() {
   }
 
   return (
+    <>
     <aside className={`app-sidebar${collapsed ? " app-sidebar--narrow" : ""}`}>
       <div className="app-sidebar__brand">
         {!collapsed ? (
@@ -73,7 +76,7 @@ export function Sidebar() {
             {!collapsed ? <span className="app-sidebar__link-text">{item.label}</span> : null}
           </NavLink>
         ))}
-        <button type="button" className="app-sidebar__link app-sidebar__link--logout" onClick={() => logout()}>
+        <button type="button" className="app-sidebar__link app-sidebar__link--logout" onClick={() => setConfirmLogout(true)}>
           <span className="app-sidebar__link-abbrev">{collapsed ? "⨯" : "◂"}</span>
           {!collapsed ? <span className="app-sidebar__link-text">Выйти</span> : null}
         </button>
@@ -83,5 +86,19 @@ export function Sidebar() {
         {collapsed ? "»" : "« Свернуть"}
       </button>
     </aside>
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Выйти из аккаунта?"
+        message="Сессия будет завершена, для доступа к приложению потребуется снова войти."
+        confirmLabel="Выйти"
+        cancelLabel="Отмена"
+        danger
+        onCancel={() => setConfirmLogout(false)}
+        onConfirm={() => {
+          setConfirmLogout(false);
+          logout();
+        }}
+      />
+    </>
   );
 }

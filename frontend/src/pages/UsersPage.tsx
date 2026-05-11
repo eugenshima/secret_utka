@@ -10,8 +10,14 @@ import {
   type UserRole,
   type UserStatus,
 } from "../api/users";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { UserDetailModal } from "../components/UserDetailModal";
 import "./users-page.css";
+
+type FormToggle =
+  | null
+  | { kind: "show" }
+  | { kind: "hide"; dirty: boolean };
 
 export function UsersPage() {
   const [page, setPage] = useState<SpringPage<UserResponse> | null>(null);
@@ -29,6 +35,12 @@ export function UsersPage() {
   const [statusesCatalog, setStatusesCatalog] = useState<UserStatus[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [newRole, setNewRole] = useState<UserRole>("USER");
+
+  const [confirmRefresh, setConfirmRefresh] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; username: string } | null>(null);
+  const [pendingCreate, setPendingCreate] = useState<UserCreateBody | null>(null);
+  const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
+  const [formToggle, setFormToggle] = useState<FormToggle>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,7 +80,17 @@ export function UsersPage() {
     }
   }, [statusesCatalog, statusId]);
 
-  async function onSubmit(e: React.FormEvent) {
+  const formHasInput = Boolean(username.trim() || password || email.trim() || displayName.trim());
+
+  function onFormToolbarClick() {
+    if (!showForm) {
+      setFormToggle({ kind: "show" });
+      return;
+    }
+    setFormToggle({ kind: "hide", dirty: formHasInput });
+  }
+
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!statusesCatalog.length) {
       setError("Сначала должен быть доступен справочник статусов");
@@ -91,11 +113,21 @@ export function UsersPage() {
     if (displayName.trim()) {
       body.display_name = displayName.trim();
     }
+    setPendingCreate(body);
+    setConfirmCreateOpen(true);
+  }
+
+  async function executeCreate() {
+    if (pendingCreate === null) {
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await createUser(body);
+      await createUser(pendingCreate);
       setPassword("");
+      setConfirmCreateOpen(false);
+      setPendingCreate(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -104,14 +136,15 @@ export function UsersPage() {
     }
   }
 
-  async function onDeleteCard(e: React.MouseEvent, id: number) {
-    e.stopPropagation();
-    if (!window.confirm(`Удалить пользователя #${id}?`)) {
+  async function executeDelete() {
+    if (deleteTarget === null) {
       return;
     }
+    const id = deleteTarget.id;
     setError(null);
     try {
       await deleteUser(id);
+      setDeleteTarget(null);
       if (selectedId === id) {
         setSelectedId(null);
       }
@@ -119,6 +152,11 @@ export function UsersPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  function onDeleteCardClick(e: React.MouseEvent, u: UserResponse) {
+    e.stopPropagation();
+    setDeleteTarget({ id: u.id, username: u.username });
   }
 
   return (
@@ -130,12 +168,102 @@ export function UsersPage() {
 
       <UserDetailModal userId={selectedId} onClose={() => setSelectedId(null)} onUserUpdated={() => void load()} />
 
+      <ConfirmDialog
+        open={confirmRefresh}
+        title="Обновить список?"
+        message="Будет повторный запрос к серверу за актуальной страницей пользователей."
+        confirmLabel="Обновить"
+        cancelLabel="Отмена"
+        onCancel={() => setConfirmRefresh(false)}
+        onConfirm={() => {
+          setConfirmRefresh(false);
+          void load();
+        }}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Удалить пользователя?"
+        message={
+          deleteTarget
+            ? `Удалить учётную запись «${deleteTarget.username}» (id ${deleteTarget.id})? Действие необратимо.`
+            : ""
+        }
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        danger
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          void executeDelete();
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmCreateOpen}
+        title="Создать пользователя?"
+        message="На сервер будет отправлен запрос на создание учётной записи с указанными данными."
+        confirmLabel="Создать"
+        cancelLabel="Отмена"
+        onCancel={() => {
+          setConfirmCreateOpen(false);
+          setPendingCreate(null);
+        }}
+        onConfirm={() => {
+          setConfirmCreateOpen(false);
+          void executeCreate();
+        }}
+      />
+
+      <ConfirmDialog
+        open={formToggle?.kind === "show"}
+        title="Открыть форму?"
+        message="Показать форму создания нового пользователя."
+        confirmLabel="Открыть"
+        cancelLabel="Отмена"
+        onCancel={() => setFormToggle(null)}
+        onConfirm={() => {
+          setFormToggle(null);
+          setShowForm(true);
+        }}
+      />
+
+      <ConfirmDialog
+        open={formToggle?.kind === "hide" && formToggle.dirty}
+        title="Скрыть форму?"
+        message="В форме уже есть введённые данные. Скрыть форму и сбросить их?"
+        confirmLabel="Скрыть"
+        cancelLabel="Остаться"
+        danger
+        onCancel={() => setFormToggle(null)}
+        onConfirm={() => {
+          setFormToggle(null);
+          setShowForm(false);
+          setUsername("");
+          setPassword("");
+          setEmail("");
+          setDisplayName("");
+        }}
+      />
+
+      <ConfirmDialog
+        open={formToggle?.kind === "hide" && !formToggle.dirty}
+        title="Скрыть форму?"
+        message="Скрыть панель создания пользователя?"
+        confirmLabel="Скрыть"
+        cancelLabel="Отмена"
+        onCancel={() => setFormToggle(null)}
+        onConfirm={() => {
+          setFormToggle(null);
+          setShowForm(false);
+        }}
+      />
+
       <div className="users-toolbar">
         <div className="users-toolbar__left">
-          <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => void load()}>
+          <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => setConfirmRefresh(true)}>
             Обновить
           </button>
-          <button type="button" className="users-toolbar__outline" onClick={() => setShowForm((x) => !x)}>
+          <button type="button" className="users-toolbar__outline" onClick={onFormToolbarClick}>
             {showForm ? "Скрыть форму" : "Новый пользователь"}
           </button>
         </div>
@@ -218,7 +346,7 @@ export function UsersPage() {
         <div className="users-empty">Пока нет пользователей — создай первого через кнопку выше.</div>
       ) : (
         <ul className="users-grid">
-          {page.content.map((u) => (
+          {page!.content.map((u) => (
             <li key={u.id}>
               <button type="button" className="users-card" onClick={() => setSelectedId(u.id)}>
                 <div className="users-card__top">
@@ -235,7 +363,7 @@ export function UsersPage() {
                     className="users-card__delete"
                     title="Удалить"
                     aria-label={`Удалить ${u.username}`}
-                    onClick={(e) => void onDeleteCard(e, u.id)}
+                    onClick={(e) => onDeleteCardClick(e, u)}
                   >
                     ×
                   </button>

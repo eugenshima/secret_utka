@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { fetchUserById, fetchUserStatuses, updateUserStatus, type UserResponse, type UserStatus } from "../api/users";
+import { ConfirmDialog } from "./ConfirmDialog";
 import "./user-detail-modal.css";
 
 type Props = {
@@ -34,6 +35,8 @@ export function UserDetailModal({ userId, onClose, onUserUpdated }: Props) {
   const [savingStatus, setSavingStatus] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [selectedStatusId, setSelectedStatusId] = useState<string>("");
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
   const loadUser = useCallback(async (id: number) => {
     setLoading(true);
@@ -69,18 +72,36 @@ export function UserDetailModal({ userId, onClose, onUserUpdated }: Props) {
     void loadStatuses();
   }, [userId, loadUser, loadStatuses]);
 
+  const dirty = Boolean(data && selectedStatusId !== String(data.status?.id));
+
+  function requestClose() {
+    if (dirty) {
+      setConfirmCloseOpen(true);
+    } else {
+      setConfirmCloseOpen(false);
+      onClose();
+    }
+  }
+
   useEffect(() => {
-    if (userId === null) {
+    if (userId === null || confirmSaveOpen || confirmCloseOpen) {
       return;
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key !== "Escape") {
+        return;
+      }
+      const isDirty =
+        data !== null && selectedStatusId !== "" && selectedStatusId !== String(data.status?.id);
+      if (isDirty) {
+        setConfirmCloseOpen(true);
+      } else {
         onClose();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [userId, onClose]);
+  }, [userId, data, selectedStatusId, onClose, confirmSaveOpen, confirmCloseOpen]);
 
   const statusOptions = useMemo(() => {
     if (!data || statuses.some((s) => s.id === data.status.id)) {
@@ -89,7 +110,7 @@ export function UserDetailModal({ userId, onClose, onUserUpdated }: Props) {
     return [data.status, ...statuses];
   }, [statuses, data]);
 
-  async function onSaveStatus() {
+  async function performSaveStatus() {
     if (userId === null || data === null) {
       return;
     }
@@ -116,13 +137,13 @@ export function UserDetailModal({ userId, onClose, onUserUpdated }: Props) {
   }
 
   const node = (
-    <div className="udm-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="udm-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && requestClose()}>
       <div className="udm-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onMouseDown={(e) => e.stopPropagation()}>
         <header className="udm-header">
           <h2 id={titleId} className="udm-title">
             Пользователь
           </h2>
-          <button type="button" className="udm-close" onClick={onClose} aria-label="Закрыть">
+          <button type="button" className="udm-close" onClick={() => requestClose()} aria-label="Закрыть">
             ×
           </button>
         </header>
@@ -160,72 +181,98 @@ export function UserDetailModal({ userId, onClose, onUserUpdated }: Props) {
                   <dd>{formatWhen(data.createdAt)}</dd>
                 </div>
                 <div className="udm-grid--full">
-                  <dt>Статус</dt>
-                  <dd>
-                    <span className="udm-badge">{data.status?.code ?? "—"}</span>
-                    <span className="udm-status-name">{data.status?.name}</span>
+                  <dt className="udm-status-dt">
+                    <label className="udm-status-field-label" htmlFor={statusSelectId}>
+                      Статус
+                    </label>
+                  </dt>
+                  <dd className="udm-status-dd">
+                    <select
+                      id={statusSelectId}
+                      className="udm-select udm-status-select"
+                      value={selectedStatusId}
+                      disabled={statusLoading || statusOptions.length === 0}
+                      onChange={(e) => setSelectedStatusId(e.target.value)}
+                    >
+                      {statusOptions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.code} — {s.name}
+                        </option>
+                      ))}
+                    </select>
+                    {statusLoading ? <p className="udm-muted udm-status-hint">Загрузка справочника статусов…</p> : null}
+                    {!statusLoading && statuses.length === 0 && statusOptions.length === 0 ? (
+                      <p className="udm-muted udm-status-hint">Справочник статусов недоступен</p>
+                    ) : null}
+                    {(() => {
+                      const meta = statusOptions.find((s) => String(s.id) === selectedStatusId);
+                      if (!meta?.description) {
+                        return null;
+                      }
+                      return (
+                        <p className="udm-status-meta-desc" aria-live="polite">
+                          {meta.description}
+                        </p>
+                      );
+                    })()}
                   </dd>
                 </div>
-                {data.status?.description ? (
-                  <div className="udm-grid--full">
-                    <dt>Описание статуса</dt>
-                    <dd className="udm-desc">{data.status.description}</dd>
-                  </div>
-                ) : null}
-                <div>
-                  <dt>status.id</dt>
-                  <dd>{data.status?.id ?? "—"}</dd>
-                </div>
               </dl>
-
-              <div className="udm-status-edit">
-                <label htmlFor={statusSelectId} className="udm-status-edit__label">
-                  Сменить статус
-                </label>
-                <div className="udm-status-edit__row">
-                  <select
-                    id={statusSelectId}
-                    className="udm-select"
-                    value={selectedStatusId}
-                    disabled={statusLoading || statusOptions.length === 0}
-                    onChange={(e) => setSelectedStatusId(e.target.value)}
-                  >
-                    {statusOptions.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.code} — {s.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="udm-btn-primary"
-                    disabled={
-                      savingStatus ||
-                      statusLoading ||
-                      !statusOptions.length ||
-                      selectedStatusId === String(data.status?.id)
-                    }
-                    onClick={() => void onSaveStatus()}
-                  >
-                    {savingStatus ? "…" : "Сохранить"}
-                  </button>
-                </div>
-                {statusLoading ? <p className="udm-muted udm-status-edit__hint">Загрузка справочника…</p> : null}
-                {!statusLoading && statuses.length === 0 && statusOptions.length === 0 ? (
-                  <p className="udm-muted udm-status-edit__hint">Справочник статусов недоступен</p>
-                ) : null}
-              </div>
             </>
           ) : null}
         </div>
-        <footer className="udm-footer">
-          <button type="button" className="udm-btn-secondary" onClick={onClose}>
-            Закрыть
+        <footer className="udm-footer udm-footer--actions">
+          <button type="button" className="udm-btn-exit" onClick={() => requestClose()}>
+            Выйти
+          </button>
+          <button
+            type="button"
+            className="udm-btn-primary"
+            disabled={
+              loading ||
+              data === null ||
+              savingStatus ||
+              statusLoading ||
+              !statusOptions.length ||
+              selectedStatusId === String(data.status?.id)
+            }
+            onClick={() => setConfirmSaveOpen(true)}
+          >
+            {savingStatus ? "Сохранение…" : "Сохранить"}
           </button>
         </footer>
       </div>
     </div>
   );
 
-  return createPortal(node, document.body);
+  return (
+    <>
+      {createPortal(node, document.body)}
+      <ConfirmDialog
+        open={confirmSaveOpen}
+        title="Сохранить статус"
+        message="Применить выбранный статус пользователю? Это изменение сразу уходит на сервер."
+        confirmLabel="Сохранить"
+        cancelLabel="Отмена"
+        onCancel={() => setConfirmSaveOpen(false)}
+        onConfirm={() => {
+          setConfirmSaveOpen(false);
+          void performSaveStatus();
+        }}
+      />
+      <ConfirmDialog
+        open={confirmCloseOpen}
+        title="Закрыть окно?"
+        message="Есть несохранённые изменения статуса. Закрыть без сохранения?"
+        confirmLabel="Закрыть"
+        cancelLabel="Остаться"
+        danger
+        onCancel={() => setConfirmCloseOpen(false)}
+        onConfirm={() => {
+          setConfirmCloseOpen(false);
+          onClose();
+        }}
+      />
+    </>
+  );
 }

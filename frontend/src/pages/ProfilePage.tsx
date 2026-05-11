@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchUserById, type UserResponse } from "../api/users";
 import { getStoredUserId } from "../api/auth";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import "./users-page.css";
 
 function fmtWhen(iso: string | undefined): string {
@@ -22,33 +23,56 @@ export function ProfilePage() {
   const [data, setData] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmRefresh, setConfirmRefresh] = useState(false);
 
-  useEffect(() => {
+  const loadProfile = useCallback(async () => {
     const id = getStoredUserId();
     if (id === null) {
       setErr("Не найден сохранённый идентификатор пользователя — войди снова");
       setLoading(false);
+      setData(null);
       return;
     }
-    void (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        setData(await fetchUserById(id));
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : String(e));
-      } finally {
-        setLoading(false);
-      }
-    })();
+    setLoading(true);
+    setErr(null);
+    try {
+      setData(await fetchUserById(id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   return (
     <div className="app-page">
+      <ConfirmDialog
+        open={confirmRefresh}
+        title="Обновить профиль?"
+        message="Повторно запросить данные пользователя с сервера."
+        confirmLabel="Обновить"
+        cancelLabel="Отмена"
+        onCancel={() => setConfirmRefresh(false)}
+        onConfirm={() => {
+          setConfirmRefresh(false);
+          void loadProfile();
+        }}
+      />
       <header className="app-page__header">
         <h1>Профиль</h1>
-        <p>Данные твоего аккаунта через <code>/api/users/&lt;id&gt;</code> (идентификатор берётся из ответа логина).</p>
+        <p>
+          Данные твоего аккаунта через <code>/api/users/&lt;id&gt;</code> (идентификатор берётся из ответа логина).
+        </p>
       </header>
+      <div className="users-toolbar">
+        <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => setConfirmRefresh(true)}>
+          Обновить
+        </button>
+      </div>
       {err !== null ? <div className="err users-banner">{err}</div> : null}
       {loading ? <div className="placeholder-panel">Загрузка…</div> : null}
       {!loading && data !== null ? (

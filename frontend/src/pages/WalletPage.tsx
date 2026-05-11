@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchWallets, type SpringPage, type WalletRow } from "../api/wallets";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 function fmtAmount(v: WalletRow["amount"]): string {
   if (v === null || v === undefined) {
@@ -12,6 +13,7 @@ export function WalletPage() {
   const [page, setPage] = useState<SpringPage<WalletRow> | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmRefresh, setConfirmRefresh] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -31,12 +33,24 @@ export function WalletPage() {
 
   return (
     <div className="app-page">
+      <ConfirmDialog
+        open={confirmRefresh}
+        title="Обновить данные?"
+        message="Повторно запросить список кошельков с сервера."
+        confirmLabel="Обновить"
+        cancelLabel="Отмена"
+        onCancel={() => setConfirmRefresh(false)}
+        onConfirm={() => {
+          setConfirmRefresh(false);
+          void load();
+        }}
+      />
       <header className="app-page__header">
         <h1>Кошельки</h1>
         <p>Твои кошельки; администратор видит записи всех пользователей.</p>
       </header>
       <div className="users-toolbar">
-        <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => void load()}>
+        <button type="button" className="users-toolbar__outline" disabled={loading} onClick={() => setConfirmRefresh(true)}>
           Обновить
         </button>
         {page !== null ? (
