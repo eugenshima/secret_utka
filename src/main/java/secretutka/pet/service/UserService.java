@@ -15,6 +15,8 @@ import secretutka.pet.storage.UserStorage;
 import secretutka.pet.storage.entity.core.UserEntity;
 import secretutka.pet.storage.repository.status.UserStatusRepository;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -64,6 +66,7 @@ public class UserService {
                 .email(request.email())
                 .displayName(request.displayName())
                 .status(userStatus)
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 

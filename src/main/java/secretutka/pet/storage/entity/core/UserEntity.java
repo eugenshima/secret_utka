@@ -42,7 +42,7 @@ public class UserEntity {
 	@Column(name = "display_name")
 	private String displayName;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@ManyToOne(fetch = FetchType.EAGER, optional = false)
 	@JoinColumn(name = "status_id", nullable = false)
 	private UserStatusEntity status;
 

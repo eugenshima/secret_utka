@@ -1,0 +1,234 @@
+.users-page .users-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.users-toolbar__left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.users-toolbar__outline {
+  font: inherit;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.users-toolbar__outline:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.users-toolbar__outline:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.users-toolbar__meta {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.users-banner {
+  margin-bottom: 1rem;
+}
+
+.users-form-panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+}
+
+.users-form-panel__title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.users-form-grid {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.users-form-grid label {
+  margin-bottom: 0.2rem;
+}
+
+.users-form-grid input {
+  margin-bottom: 0;
+}
+
+.users-form-grid__actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.users-form-grid__actions button {
+  width: auto;
+}
+
+.users-skeleton {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.users-skeleton__card {
+  height: 132px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+  background-size: 400% 100%;
+  animation: users-shimmer 1.15s ease-in-out infinite;
+}
+
+@keyframes users-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.users-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+}
+
+.users-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.users-card {
+  all: unset;
+  display: block;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 14px;
+  padding: 1.1rem 1.15rem;
+  background: #fff;
+  border: 1px solid rgb(226 232 240 / 0.95);
+  box-shadow: 0 4px 6px -1px rgb(15 23 42 / 6%), 0 2px 4px -2px rgb(15 23 42 / 6%);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.users-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 25px -8px rgb(15 23 42 / 18%);
+  border-color: #bae6fd;
+}
+
+.users-card:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 3px;
+}
+
+.users-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.users-card__avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: #fff;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.users-card__head {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.users-card__name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.users-card__badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.users-card__delete {
+  flex-shrink: 0;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.users-card__delete:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.users-card__email {
+  margin: 0 0 0.35rem;
+  font-size: 0.88rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.users-card__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
