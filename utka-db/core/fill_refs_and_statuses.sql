@@ -1,8 +1,8 @@
 -- Пример начальных данных — выполняйте после создания таблиц (порядок важен из‑за FK).
 
-INSERT INTO status.user_status (code, name, sort_order, is_terminal) VALUES
-    ('active', 'Активен', 10, false),
-    ('blocked', 'Заблокирован', 20, false),
+INSERT INTO status.user_status (code, name, description, is_active) VALUES
+    ('active', 'Активен', 'пользователь активен', true),
+    ('blocked', 'Заблокирован', 20, true),
     ('deleted', 'Удалён', 30, true);
 
 INSERT INTO status.wallet_status (code, name, sort_order, is_terminal) VALUES
